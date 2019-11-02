@@ -7,7 +7,7 @@ import json
 
 def data_viz(request):
 
-    # Correlation matrix
+    # Initial correlation matrix
     df_corr = settings.DATAFRAME.corr()
     corr_cols = list(df_corr.columns)
     corr_data = []
@@ -20,7 +20,7 @@ def data_viz(request):
                 'value':val
             })
 
-    
+    # Initial histogram values - age
     age_vals = settings.DATAFRAME['age'].values
     age_hist = {
         'column': 'age',

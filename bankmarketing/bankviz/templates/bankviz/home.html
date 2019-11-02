@@ -51,6 +51,9 @@
         max-width: 500px;
         margin: 0 auto;
     }
+    #hist-input{
+        margin-left: 20px;
+    }
     #hist {
         max-width: 800px;
         margin: 0 auto;
@@ -70,22 +73,61 @@
     .text {
         font-family: sans-serif;
     }
+
+    li.hist-img {
+        list-style-type: none;        
+    }
+    li.button-hist-cat {
+        font-family: sans-serif;
+        font-size: 0.8rem;
+        display: inline-block;
+        padding: 0.2em 1em 0.2em 1em;
+        margin-top: 5px;
+        list-style-position:inside;
+        border: 0.5px solid #747474;
+        cursor: pointer;
+    }
+    li.button-hist-cat:hover {
+        background-color: #0cb09a;
+        border: none;
+        color: #ffffff;
+    }
+    li.button-hist-cat-clicked {
+        background-color: #0cb09a;
+        border: none;
+        color: #ffffff;
+    }
 </style>
 <body>
 
 <div class="container" id="container">
 
 
+    <div id="hist-input">
+        <h2>View Histogram</h2>
+        <ul>
+            <li id="hist-li-age" class="button-hist-cat" onclick="generate_histogram('age');">age</li>
+            <li id="hist-li-campaign" class="button-hist-cat" onclick="generate_histogram('campaign');">campaign</li>
+            <li id="hist-li-pdays" class="button-hist-cat" onclick="generate_histogram('pdays');">pdays</li>
+            <li id="hist-li-previous" class="button-hist-cat" onclick="generate_histogram('previous');">previous</li>
+             <li id="hist-li-euribor3m" class="button-hist-cat" onclick="generate_histogram('euribor3m');">euribor3m</li>
+             <li id="hist-li-nr_employed" class="button-hist-cat" onclick="generate_histogram('nr_employed');">nr_employed</li>
+             <li id="hist-li-cons_price_idx" class="button-hist-cat" onclick="generate_histogram('cons_price_idx');">cons_price_idx</li>
+            <li id="hist-li-cons_conf_idx" class="button-hist-cat" onclick="generate_histogram('cons_conf_idx');">cons_conf_idx</li>
+            <li id="hist-li-emp_var_rate" class="button-hist-cat" onclick="generate_histogram('emp_var_rate');">emp_var_rate</li>
+        </ul>
+
+    </div>
     <div id="hist"></div>
     <br>
     <div id="correlation"></div>
     <br>
     <div id="age-hist"></div>
 
-
+    <br>
     <div id="predictions"></div>
     <div id="mean-prob-conversion">
-        <h3>Mean Probability of Subscribing: <span id="mean-probabiity">0.084</span></h3>
+        <h2>Mean Probability of Subscribing: <span id="mean-probabiity">0.084</span></h>
     <br>
     </div>
 
@@ -242,7 +284,7 @@
 // histogram
 
 // set the dimensions and margins of the graph
-var margin_hist = {top: 10, right: 30, bottom: 30, left: 40},
+var margin_hist = {top: 20, right: 30, bottom: 50, left: 40},
     width_hist = 800 - margin_hist.left - margin_hist.right,
     height_hist = 400 - margin_hist.top - margin_hist.bottom;
 
@@ -255,14 +297,100 @@ var svg_hist = d3.select("#hist")
     .attr("transform",
           "translate(" + margin_hist.left + "," + margin_hist.top + ")");
 
-  data = JSON.parse('{{ age_hist | safe }}')
-  console.log(data)
+  data_hist = JSON.parse('{{ age_hist | safe }}')
+  console.log(data_hist)
 
   var x_hist = d3.scaleLinear()
-      .domain([0, data.max])
+      .domain([data_hist.min, data_hist.max])
       .range([0, width_hist]);
   svg_hist.append("g")
       .attr("transform", "translate(0," + height_hist + ")")
+      .attr("class", "hist-x-axis")
+      .call(d3.axisBottom(x_hist));
+
+  // set the parameters for the histogram
+  var histogram = d3.histogram()
+      .value(function(d) { return d.value; })   // I need to give the vector of value
+      .domain(x_hist.domain())  // then the domain of the graphic
+      .thresholds(x_hist.ticks(70)); // then the numbers of bins
+
+  // And apply this function to data to get the bins
+  var bins = histogram(data_hist.values);
+
+  // Y axis: scale and draw:
+  var y_hist = d3.scaleLinear()
+      .range([height_hist, 0]);
+      y_hist.domain([0, d3.max(bins, function(d) { return d.length; })]);   // d3.hist has to be called before the Y axis obviously
+  svg_hist.append("g")
+      .attr("class", "hist-y-axis")
+      .call(d3.axisLeft(y_hist));
+
+  // append the bar rectangles to the svg element
+  svg_hist.selectAll("rect")
+      .data(bins)
+      .enter()
+      .append("rect")
+        .attr("class", "hist-rect")
+        .attr("x", 1)
+        .attr("transform", function(d) { return "translate(" + x_hist(d.x0) + "," + y_hist(d.length) + ")"; })
+        .attr("width", function(d) { return x_hist(d.x1) - x_hist(d.x0) -1 ; })
+        .attr("height", function(d) { return height_hist - y_hist(d.length); })
+        .style("fill", "#69b3a2")
+        .on("mouseover", function(d) {       
+            d3.select(this).transition()        
+                .duration(0)      
+                .style("opacity", 0.5);   
+        })
+        .on("mouseout", function(d) {       
+            d3.select(this).transition()        
+                .duration(0)      
+                .style("opacity", 0.9);   
+        })  
+
+  svg_hist.append("text")
+        .attr("x", width_hist/2)             
+        .attr("y", height_hist + margin_hist.bottom*0.75 )
+        .attr("text-anchor", "middle")  
+        .style("font-size", "14px")
+        .style("font-weight", "bold")
+        .attr("class", "text")
+        .attr("id", "hist-text")
+        .text("Age");
+
+function generate_histogram(colname) {
+
+    data ={
+        "colname":colname,
+    };
+
+    var xhttp = new XMLHttpRequest()
+    xhttp.onreadystatechange = function () {
+        var json_response
+        if (this.readyState === 4 && this.status === 200) {
+            json_response = JSON.parse(this.response);
+            console.log(json_response)
+            update_hist(json_response)
+        }
+    }
+    xhttp.open('POST', '/api/get_col_values', true);
+    xhttp.setRequestHeader('Content-Type', 'application/json');
+    xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+    xhttp.send(
+        JSON.stringify(data)
+    );
+}
+
+
+function update_hist(data) {
+
+  // Updating bars for prediction
+  // Scale the range of the data in the domains
+  var x_hist = d3.scaleLinear()
+      .domain([data.min, data.max])
+      .range([0, width_hist]);
+  svg_hist.selectAll(".hist-x-axis")
+      .attr("transform", "translate(0," + height_hist + ")")
+      .attr("class", "hist-x-axis")
       .call(d3.axisBottom(x_hist));
 
   // set the parameters for the histogram
@@ -278,19 +406,35 @@ var svg_hist = d3.select("#hist")
   var y_hist = d3.scaleLinear()
       .range([height_hist, 0]);
       y_hist.domain([0, d3.max(bins, function(d) { return d.length; })]);   // d3.hist has to be called before the Y axis obviously
-  svg_hist.append("g")
+  svg_hist.selectAll(".hist-y-axis")
+      .attr("class", "hist-y-axis")
       .call(d3.axisLeft(y_hist));
 
   // append the bar rectangles to the svg element
+  svg_hist.selectAll(".hist-rect").remove()
   svg_hist.selectAll("rect")
       .data(bins)
       .enter()
       .append("rect")
+        .attr("class", "hist-rect")
         .attr("x", 1)
         .attr("transform", function(d) { return "translate(" + x_hist(d.x0) + "," + y_hist(d.length) + ")"; })
         .attr("width", function(d) { return x_hist(d.x1) - x_hist(d.x0) -1 ; })
         .attr("height", function(d) { return height_hist - y_hist(d.length); })
         .style("fill", "#69b3a2")
+        .on("mouseover", function(d) {       
+            d3.select(this).transition()        
+                .duration(0)      
+                .style("opacity", 0.5);   
+        })
+        .on("mouseout", function(d) {       
+            d3.select(this).transition()        
+                .duration(0)      
+                .style("opacity", 0.9);   
+        })  
+    document.getElementById("hist-text").innerHTML=data.column
+
+}
 
 </script>
 
@@ -386,12 +530,12 @@ var svg_hist = d3.select("#hist")
           .style("opacity", 0.9)
           .on("mouseover", function(d) {       
                 d3.select(this).transition()        
-                    .duration(200)      
+                    .duration(0)      
                     .style("opacity", 0.5);   
             })
           .on("mouseout", function(d) {       
                 d3.select(this).transition()        
-                    .duration(200)      
+                    .duration(0)      
                     .style("opacity", 0.9);   
             })
 // Add title
@@ -399,7 +543,7 @@ var svg_hist = d3.select("#hist")
         .attr("x", width_corr/2)             
         .attr("y", 0 - (margin_corr.top / 2))
         .attr("text-anchor", "middle")  
-        .style("font-size", "18px")
+        .style("font-size", "24px")
         .style("font-weight", "bold")
         .attr("class", "text")
         .text("Correlogram of Continuous Variables");
@@ -536,9 +680,9 @@ var data = [
 ];
 
 // set the dimensions and margins of the graph
-var margin = {top: 50, right: 50, bottom: 60, left: 200},
+var margin = {top: 50, right: 50, bottom: 60, left: 100},
     width = 800     - margin.left - margin.right,
-    height = 300 - margin.top - margin.bottom;
+    height = 350 - margin.top - margin.bottom;
 
 // set the ranges
 var y = d3.scaleBand()
@@ -565,13 +709,23 @@ var svg = d3.select("#predictions").append("svg")
 
   // append the rectangles for the bar chart
   svg.selectAll(".bar")
-      .data(data)
+    .data(data)
     .enter().append("rect")
-      .attr("class", "bar")
-      //.attr("x", function(d) { return x(d.sales); })
-      .attr("width", function(d) {return x(d.value); } )
-      .attr("y", function(d) { return y(d.name); })
-      .attr("height", y.bandwidth());
+        .attr("class", "bar")
+        .attr("width", function(d) {return x(d.value); } )
+        .attr("y", function(d) { return y(d.name); })
+        .attr("height", y.bandwidth())
+        .on("mouseover", function(d) {       
+            d3.select(this).transition()        
+                .duration(0)      
+                .style("opacity", 0.5);   
+        })
+        .on("mouseout", function(d) {       
+            d3.select(this).transition()        
+                .duration(0)      
+                .style("opacity", 0.9);   
+        })
+
 
   // add the x Axis
   svg.append("g")
@@ -588,7 +742,7 @@ var svg = d3.select("#predictions").append("svg")
         .attr("x", width/2)             
         .attr("y", 0 - (margin.top / 2))
         .attr("text-anchor", "middle")  
-        .style("font-size", "18px")
+        .style("font-size", "24px")
         .style("font-weight", "bold")
         .attr("class", "text")
         .text("Predicting Time Deposit Subscription");
@@ -678,6 +832,8 @@ function generate_predictions() {
         JSON.stringify(data)
     );
 }
+
+
 
 function update_pred(data) {
 
