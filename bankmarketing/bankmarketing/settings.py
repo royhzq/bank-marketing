@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/2.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
+from sklearn.externals import joblib
 import pandas as pd
 import os
 
@@ -38,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'django_extensions',
     'bankviz'
 ]
@@ -81,8 +83,19 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',
         'USER': 'postgres',
-        'HOST': 'db',
+        'HOST': 'db', # db for docker
         'PORT': 5432,
+    }
+}
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'bankmarketing',
+        'USER': 'bank',
+        'PASSWORD': '1234abcd',
+        'HOST': 'localhost',
+        'PORT': '',
     }
 }
 
@@ -125,3 +138,48 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 DATAFRAME = pd.read_csv('data/bank-additional-full.csv', delimiter=';')
+CATEGORICAL = [
+    'job',
+    'marital',
+    'education',
+    'default',
+    'housing',
+    'loan',
+    'contact',
+    'month',
+    'day_of_week',
+    'poutcome'
+]
+
+CATEGORICAL_VALUES = {
+    cat : list(DATAFRAME[cat].value_counts().index) \
+    for cat in CATEGORICAL
+}
+
+CATEGORICAL_CHOICES = { 
+    cat : tuple(
+            zip(
+                DATAFRAME[cat].value_counts().index,
+                DATAFRAME[cat].value_counts().index
+            )
+        ) \
+        for cat in CATEGORICAL
+}
+
+LOGISTIC_MODEL = joblib.load('MLModels/logistic_regression.joblib') 
+SCALER = joblib.load('MLModels/scaler.joblib')
+
+X_TRAIN_COLS = ['age', 'campaign', 'pdays', 'previous', 'emp_var_rate',
+       'cons_price_idx', 'cons_conf_idx', 'euribor3m', 'nr_employed',
+       'job_blue-collar', 'job_entrepreneur', 'job_housemaid',
+       'job_management', 'job_retired', 'job_self-employed', 'job_services',
+       'job_student', 'job_technician', 'job_unemployed', 'job_unknown',
+       'marital_married', 'marital_single', 'marital_unknown',
+       'education_basic.6y', 'education_basic.9y', 'education_high.school',
+       'education_illiterate', 'education_professional.course',
+       'education_university.degree', 'education_unknown', 'default_unknown',
+       'default_yes', 'housing_unknown', 'housing_yes', 'loan_unknown',
+       'loan_yes', 'contact_telephone', 'month_aug', 'month_dec', 'month_jul',
+       'month_jun', 'month_mar', 'month_may', 'month_nov', 'month_oct',
+       'month_sep', 'day_of_week_mon', 'day_of_week_thu', 'day_of_week_tue',
+       'day_of_week_wed', 'poutcome_nonexistent', 'poutcome_success']
