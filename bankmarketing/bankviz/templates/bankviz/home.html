@@ -39,7 +39,7 @@
     }
     .button:disabled {
         background-color: #dedede;
-        color: white;
+        color: white;   
         font-size: 16px;
         font-weight: bold;
     }
@@ -48,6 +48,14 @@
         margin: 0 auto;
     }
     #prediction-inputs {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    #hist {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    #age-hist {
         max-width: 500px;
         margin: 0 auto;
     }
@@ -66,6 +74,15 @@
 <body>
 
 <div class="container" id="container">
+
+
+    <div id="hist"></div>
+    <br>
+    <div id="correlation"></div>
+    <br>
+    <div id="age-hist"></div>
+
+
     <div id="predictions"></div>
     <div id="mean-prob-conversion">
         <h3>Mean Probability of Subscribing: <span id="mean-probabiity">0.084</span></h3>
@@ -216,6 +233,288 @@
 </div>
 
 <script src="//d3js.org/d3.v4.min.js"></script>
+
+
+
+
+<script>
+
+// histogram
+
+// set the dimensions and margins of the graph
+var margin_hist = {top: 10, right: 30, bottom: 30, left: 40},
+    width_hist = 800 - margin_hist.left - margin_hist.right,
+    height_hist = 400 - margin_hist.top - margin_hist.bottom;
+
+// append the svg object to the body of the page
+var svg_hist = d3.select("#hist")
+  .append("svg")
+    .attr("width", width_hist + margin_hist.left + margin_hist.right)
+    .attr("height", height_hist + margin_hist.top + margin_hist.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin_hist.left + "," + margin_hist.top + ")");
+
+  data = JSON.parse('{{ age_hist | safe }}')
+  console.log(data)
+
+  var x_hist = d3.scaleLinear()
+      .domain([0, data.max])
+      .range([0, width_hist]);
+  svg_hist.append("g")
+      .attr("transform", "translate(0," + height_hist + ")")
+      .call(d3.axisBottom(x_hist));
+
+  // set the parameters for the histogram
+  var histogram = d3.histogram()
+      .value(function(d) { return d.value; })   // I need to give the vector of value
+      .domain(x_hist.domain())  // then the domain of the graphic
+      .thresholds(x_hist.ticks(70)); // then the numbers of bins
+
+  // And apply this function to data to get the bins
+  var bins = histogram(data.values);
+
+  // Y axis: scale and draw:
+  var y_hist = d3.scaleLinear()
+      .range([height_hist, 0]);
+      y_hist.domain([0, d3.max(bins, function(d) { return d.length; })]);   // d3.hist has to be called before the Y axis obviously
+  svg_hist.append("g")
+      .call(d3.axisLeft(y_hist));
+
+  // append the bar rectangles to the svg element
+  svg_hist.selectAll("rect")
+      .data(bins)
+      .enter()
+      .append("rect")
+        .attr("x", 1)
+        .attr("transform", function(d) { return "translate(" + x_hist(d.x0) + "," + y_hist(d.length) + ")"; })
+        .attr("width", function(d) { return x_hist(d.x1) - x_hist(d.x0) -1 ; })
+        .attr("height", function(d) { return height_hist - y_hist(d.length); })
+        .style("fill", "#69b3a2")
+
+</script>
+
+
+<script>
+    var margin_corr = {top: 50, right: 40, bottom: 20, left: 20},
+        width_corr = 900 - margin_corr.left - margin_corr.right,
+        height_corr = 500 - margin_corr.top - margin_corr.bottom
+
+    // Create the svg area
+    var svg_corr = d3.select("#correlation")
+      .append("svg")
+        .attr("width", width_corr + margin_corr.left + margin_corr.right)
+        .attr("height", height_corr + margin_corr.top + margin_corr.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin_corr.left + "," + margin_corr.top + ")");
+
+
+    data = JSON.parse('{{ corr_data | safe }}')
+
+      var domain_corr = d3.set(data.map(function(d) { return d.x })).values()
+      var num = Math.sqrt(data.length)
+
+      // Create a color scale
+      var color_corr = d3.scaleLinear()
+        .domain([-1, 0, 1])
+        .range(["#ff0000", "#545454", "#000080"]);
+
+      // Create a size scale for bubbles on top right. Watch out: must be a rootscale!
+      var size_corr = d3.scaleSqrt()
+        .domain([0, 1])
+        .range([0, 20]);
+
+      // X scale
+      var x_corr = d3.scalePoint()
+        .range([0, width_corr])
+        .domain(domain_corr)
+
+      // Y scale
+      var y_corr = d3.scalePoint()
+        .range([0, height_corr])
+        .domain(domain_corr)
+
+      // Create one 'g' element for each cell of the correlogram
+      var cor = svg_corr.selectAll(".cor")
+        .data(data)
+        .enter()
+        .append("g")
+          .attr("class", "cor")
+          .attr("transform", function(d) {
+            return "translate(" + x_corr(d.x) + "," + y_corr(d.y) + ")";
+          });
+
+      cor.filter(function(d){
+          var ypos = domain_corr.indexOf(d.y);
+          var xpos = domain_corr.indexOf(d.x);
+          return xpos <= ypos;
+        })
+        .append("text")
+          .attr("y", 5)
+          .text(function(d) {
+            if (d.x === d.y) {
+              return d.x;
+            } else {
+              return d.value.toFixed(2);
+            }
+          })
+          .style("font-size", 11)
+          .style("text-align", "center")
+          .style("fill", function(d){
+            if (d.x === d.y) {
+              return "#000";
+            } else {
+              return color_corr(d.value);
+            }
+          });   
+
+      cor.filter(function(d){
+          var ypos = domain_corr.indexOf(d.y);
+          var xpos = domain_corr.indexOf(d.x);
+          return xpos > ypos;
+        })
+        .append("circle")
+          .attr("r", function(d){ return size_corr(Math.abs(d.value)) })
+          .attr("transform", "translate(10, 0)")
+          .style("fill", function(d){
+            if (d.x === d.y) {
+              return "#000";
+            } else {
+              return color_corr(d.value);
+            }
+          })
+          .style("opacity", 0.9)
+          .on("mouseover", function(d) {       
+                d3.select(this).transition()        
+                    .duration(200)      
+                    .style("opacity", 0.5);   
+            })
+          .on("mouseout", function(d) {       
+                d3.select(this).transition()        
+                    .duration(200)      
+                    .style("opacity", 0.9);   
+            })
+// Add title
+  svg_corr.append("text")
+        .attr("x", width_corr/2)             
+        .attr("y", 0 - (margin_corr.top / 2))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "18px")
+        .style("font-weight", "bold")
+        .attr("class", "text")
+        .text("Correlogram of Continuous Variables");
+
+</script>
+
+
+
+<script>
+    // Bar chart For Age
+    var margin_age = {top: 20, right: 20, bottom: 30, left: 40},
+    width_age = 600  - margin_age.left - margin_age.right,
+    height_age = 400 - margin_age.top - margin_age.bottom;
+
+
+    // set the ranges
+    var x_age = d3.scaleBand()
+              .range([0, width_age])
+              .padding(0.01);
+    var y_age = d3.scaleLinear()
+              .range([height_age, 0]);
+
+    var svg_age = d3.select('#age-hist').append("svg")
+        .attr("width", width_age + margin_age.left + margin_age.right)
+        .attr("height", height_age + margin_age.top + margin_age.bottom)
+        .append("g").attr("transform", "translate(" + margin_age.left + "," + margin_age.top + ")");
+    
+
+    var ageData = [
+      {"name":"John", "height":1.93},
+      {"name":"Mafe", "height":1.70},
+      {"name":"Sonia", "height":1.60},
+      {"name":"Vicente", "height":0.32},
+      {"name":"John2", "height":1.93},
+      {"name":"Mafe2", "height":1.70},
+      {"name":"Sonia2", "height":1.60},
+      {"name":"Vicente2", "height":0.32},
+      {"name":"John3", "height":1.93},
+      {"name":"Mafe3", "height":1.70},
+      {"name":"Sonia3", "height":1.60},
+      {"name":"Vicente3", "height":0.32}
+    ]
+
+    x_age.domain(ageData.map(function(d) { return d.name }));
+    y_age.domain([0, d3.max(ageData, function(d) { return d.height })]);      
+
+    svg_age.selectAll(".age-bar")
+        .data(ageData)
+        .enter()
+        .append("rect")
+        .attr("class", "age-bar")
+        .attr("x", function(d) { return x_age(d.name) })
+        .attr("width", x_age.bandwidth())
+        .attr("y", function(d) { return y_age(d.height)})
+        .attr("height", function(d) { return height_age - y_age(d.height); });
+
+    // add the x Axis
+    svg_age.append("g")
+      .attr("transform", "translate(0," + height_age + ")")
+      .call(d3.axisBottom(x_age));
+
+    // add the y Axis
+    svg_age.append("g")
+      .call(d3.axisLeft(y_age));
+
+
+</script>
+
+<script>
+
+    // Stacked
+    data = [
+        {
+            "key":"yes",
+            "values":[
+                {
+                    "subscribe":"yes",
+                    "marital":"married",
+                    "count":24928,
+                    "y0":0,
+                    "y":24928,
+                },
+                {
+                    "subscribe":"yes",
+                    "marital":"single",
+                    "count":24928,
+                    "y0":24928,
+                    "y":36496,
+                }
+            ]
+        },
+        {
+            "key":"no",
+            "values":[
+                {
+                    "subscribe":"no",
+                    "marital":"married",
+                    "count":24928,
+                    "y0":0,
+                    "y":24928,
+                },
+                {
+                    "subscribe":"no",
+                    "marital":"single",
+                    "count":24928,
+                    "y0":24928,
+                    "y":36496,
+                }
+            ]
+        }
+    ]
+
+</script>
+
+
 <script>
 var data = [
     {
@@ -313,13 +612,36 @@ function getCookie (name) {
       .shift()
   }
 }
+
+function get_histogram() {
+
+   data = {
+        "colname":"nr_employed"
+   }
+
+    var xhttp = new XMLHttpRequest()
+    xhttp.onreadystatechange = function () {
+        var json_response
+        if (this.readyState === 4 && this.status === 200) {
+            json_response = JSON.parse(this.response);
+            console.log(json_response)
+        }
+    }
+    xhttp.open('POST', '/api/get_col_values', true);
+    xhttp.setRequestHeader('Content-Type', 'application/json');
+    xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+    xhttp.send(
+        JSON.stringify(data)
+    );
+}
+
 function generate_predictions() {
 
     // Onclick event to generate predictions
 
     button = document.getElementById('gen-pred');
     button.disabled = true;
-    window.location.href = "/#container";
+    window.location.href = "/#predictions";
     data ={
         "age":Math.min(Math.max(parseInt(document.getElementById('pred-age').value), 17), 98),
         "job":document.getElementById('pred-job').value,

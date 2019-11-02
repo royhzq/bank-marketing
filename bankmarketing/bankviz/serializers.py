@@ -22,3 +22,7 @@ class DataSerializer(serializers.Serializer):
     # cons_conf_idx = serializers.CharField()
     # euribor3m = serializers.CharField()
     # nr_employed = serializers.CharField()
+
+class GetColValuesSerializer(serializers.Serializer):
+
+    colname = serializers.CharField()
