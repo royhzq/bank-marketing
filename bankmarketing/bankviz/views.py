@@ -5,12 +5,7 @@ from .utils import predict
 
 def data_viz(request):
 
-    df = settings.DATAFRAME
-    prediction = predict()
-    context = {
-        'test': df['y'].value_counts(),
-        'prediction':prediction
-    }
+    context = {}
     return render(
         request,
         'bankviz/home.html',

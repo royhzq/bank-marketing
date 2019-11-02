@@ -27,7 +27,9 @@ def predict(data):
     # For external data , use mean of dataset as placeholder values for now
 
     scaler  = settings.SCALER
-    model = settings.LOGISTIC_MODEL
+    log_model = settings.LOGISTIC_MODEL
+    rf_model = settings.RANDOM_FORESTS_MODEL
+    xgb_model = settings.XGB_MODEL
 
     data['emp_var_rate'] = 0.08188550063125165
     data['cons_price_idx'] = 93.5756643682626
@@ -40,7 +42,16 @@ def predict(data):
     df = pd.DataFrame.from_dict(data)
     df = df[settings.X_TRAIN_COLS]
 
-    x_pred = scaler.transform(df)
-    prediction = model.predict_proba(x_pred)[0]
-    # Returns  [prob of 0, prob of 1]
-    return prediction
+    x_scaled = scaler.transform(df)
+    log_pred = log_model.predict_proba(x_scaled)[0][1]
+    rf_pred = rf_model.predict_proba(x_scaled)[0][1]
+    xgb_pred = xgb_model.predict_proba(x_scaled)[0][1]
+
+    results = [
+        {'name':'Aggregate', 'value':sum([log_pred, rf_pred, xgb_pred])/3},
+        {'name':'XGBoost', 'value':xgb_pred},
+        {'name':'Random Forests', 'value':rf_pred},
+        {'name':'Logistic Regression', 'value':log_pred},
+    ]
+    # Returns  prob of success
+    return results

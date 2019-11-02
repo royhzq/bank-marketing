@@ -1,3 +1,390 @@
-<h1>Hello World</h1>
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style> 
+    body {
+        font-family: sans-serif;
+        background-color: #edf1f7
+    }
+    select {
+        padding-left: 30px;
+        padding-right: 30px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        font-size: 14px;
+        background-color: #f9f9f9;
+    }
 
-{{ prediction }}
+    input {
+        padding-left: 10px;
+        padding-right: 10px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        font-size: 14px;
+        background-color: #f9f9f9;
+        border:1px solid #cccccc
+    }
+
+    .button {
+      background-color: #ff6c00;
+      border: none;
+      color: white;
+      padding: 10px 25px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      font-weight: bold;
+      margin: 4px 2px;
+      cursor: pointer;
+    }
+    .button:disabled {
+        background-color: #dedede;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+    }
+    .container {
+        max-width: 840px;
+        margin: 0 auto;
+    }
+    #prediction-inputs {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    #mean-prob-conversion {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .bar { 
+        fill: #555abf; 
+    }
+    .text {
+        font-family: sans-serif;
+    }
+</style>
+<body>
+
+<div class="container" id="container">
+    <div id="predictions"></div>
+    <div id="mean-prob-conversion">
+        <h3>Mean Probability of Subscribing: <span id="mean-probabiity">0.084</span></h3>
+    <br>
+    </div>
+
+    <div id="prediction-inputs">
+        <h3>Prediction Inputs &nbsp;&nbsp;&nbsp;
+            <button id="gen-pred" class="button" onclick="generate_predictions();">Generate Prediction</button>
+        </h3>
+        <hr>
+        <p>
+            <span>Age of Customer: </span>
+            <input id="pred-age" value=18 type="number" min="17" max="99">            
+        </p>
+        
+        <p>
+            <span>Customer Profession: </span>
+            <select name="job" id="pred-job">
+                <option value="admin.">admin.</option>
+                <option value="blue-collar">blue-collar</option>
+                <option value="technician">technician</option>
+                <option value="services">services</option>
+                <option value="management">management</option>
+                <option value="retired">retired</option>
+                <option value="entrepreneur">entrepreneur</option>
+                <option value="self-employed">self-employed</option>
+                <option value="housemaid">housemaid</option>
+                <option value="unemployed">unemployed</option>
+                <option value="student">student</option>
+                <option value="unknown">unknown</option>        
+            </select>
+        </p>
+
+        <p>
+            <span>Marital Status: </span>
+            <select name="marital" id="pred-marital">
+                <option value="married">married</option>
+                <option value="single">single</option>
+                <option value="divorced">divorced</option>
+                <option value="unknown">unknown</option>
+            </select>
+        </p>
+        <p>
+            <span>Education: </span>
+            <select name="education" id="pred-education">
+                <option value="university.degree">university.degree</option>
+                <option value="high.school">high.school</option>
+                <option value="basic.9y">basic.9y</option>
+                <option value="professional.course">professional.course</option>
+                <option value="basic.4y">basic.4y</option>
+                <option value="basic.6y">basic.6y</option>
+                <option value="unknown">unknown</option>
+                <option value="illiterate">illiterate</option>
+            </select>
+        </p>
+
+        <p>
+            <span>Has Credit in Default: </span>
+            <select name="default" id="pred-default">
+                <option value="no">no</option>
+                <option value="unknown">unknown</option>
+                <option value="yes">yes</option>
+            </select>
+        </p>
+
+        <p>
+            <span>Customer Has Housing Loan: </span>
+            <select name="housing" id="pred-housing">
+                <option value="yes">yes</option>
+                <option value="no">no</option>
+                <option value="unknown">unknown</option>
+            </select>
+        </p>
+
+        <p>
+            <span>Customer Has Personal Loan: </span>
+            <select name="loan" id="pred-loan">
+                <option value="no">no</option>
+                <option value="yes">yes</option>
+                <option value="unknown">unknown</option>
+            </select>
+        </p>
+
+        <p>
+            <span>Contact Type: </span>
+            <select name="contact" id="pred-contact">
+                <option value="cellular">cellular</option>
+                <option value="telephone">telephone</option>
+            </select>
+        </p>
+
+        <p>
+            <span>Last Contact Month: </span>
+            <select name="month" id="pred-month">
+                <option value="may">may</option>
+                <option value="jul">jul</option>
+                <option value="aug">aug</option>
+                <option value="jun">jun</option>
+                <option value="nov">nov</option>
+                <option value="apr">apr</option>
+                <option value="oct">oct</option>
+                <option value="sep">sep</option>
+                <option value="mar">mar</option>
+                <option value="dec">dec</option>
+            </select>
+        </p>
+
+        <p>
+            <span>Last known Day Of Call: </span>
+            <select name="day_of_week" id="pred-day_of_week">
+                <option value="thu">thu</option>
+                <option value="mon">mon</option>
+                <option value="wed">wed</option>
+                <option value="tue">tue</option>
+                <option value="fri">fri</option>
+            </select>
+        </p>
+
+
+        <p>
+            <span>Number of times contacted: </span>
+            <input id="pred-campaign" value="0" type="number" min="0" max="99">            
+        </p>
+
+        <p>
+            <span>Days Passed since last contact: </span>
+            <input id="pred-pdays" value="0" type="number" min="0" max="99">            
+        </p>
+
+        <p>
+            <span># Times Contacted in last campaign: </span>
+            <input id="pred-previous" value="0" type="number" min="0" max="99">            
+        </p>
+
+        <p>
+            <span>Outcome of previous Campaign: </span>
+            <select name="poutcome" id="pred-poutcome">
+                <option value="nonexistent">nonexistent</option>
+                <option value="failure">failure</option>
+                <option value="success">success</option>
+            </select>        
+        </p>
+
+
+    </div>
+
+</div>
+
+<script src="//d3js.org/d3.v4.min.js"></script>
+<script>
+var data = [
+    {
+        "name": "Aggregate",
+        "value": 0.08372565264734562
+    },
+    {
+        "name": "XGBoost",
+        "value": 0.04470130056142807
+    },
+    {
+        "name": "Random Forests",
+        "value": 0.82
+    },
+    {
+        "name": "Logistic Regression",
+        "value": 0.14647565738060878
+    }
+];
+
+// set the dimensions and margins of the graph
+var margin = {top: 50, right: 50, bottom: 60, left: 200},
+    width = 800     - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
+
+// set the ranges
+var y = d3.scaleBand()
+          .range([height, 0])
+          .padding(0.1);
+
+var x = d3.scaleLinear()
+          .range([0, width]);
+          
+// append the svg object to the body of the page
+// append a 'group' element to 'svg'
+// moves the 'group' element to the top left margin
+var svg = d3.select("#predictions").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", 
+          "translate(" + margin.left + "," + margin.top + ")");
+
+  // Scale the range of the data in the domains
+  x.domain([0, Math.min(d3.max(data, function(d){ return d.value; })*1.25, 1)])
+  y.domain(data.map(function(d) { return d.name; }));
+  //y.domain([0, d3.max(data, function(d) { return d.sales; })]);
+
+  // append the rectangles for the bar chart
+  svg.selectAll(".bar")
+      .data(data)
+    .enter().append("rect")
+      .attr("class", "bar")
+      //.attr("x", function(d) { return x(d.sales); })
+      .attr("width", function(d) {return x(d.value); } )
+      .attr("y", function(d) { return y(d.name); })
+      .attr("height", y.bandwidth());
+
+  // add the x Axis
+  svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .attr("class", "pred-x-axis")
+      .call(d3.axisBottom(x));
+
+  // add the y Axis
+  svg.append("g")
+      .call(d3.axisLeft(y));
+
+  // Add title
+  svg.append("text")
+        .attr("x", width/2)             
+        .attr("y", 0 - (margin.top / 2))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "18px")
+        .style("font-weight", "bold")
+        .attr("class", "text")
+        .text("Predicting Time Deposit Subscription");
+  // Add x-subtitle
+  svg.append("text")
+        .attr("x", width/2)             
+        .attr("y", height + margin.bottom*0.75 )
+        .attr("text-anchor", "middle")  
+        .style("font-size", "14px")
+        .style("font-weight", "bold")
+        .attr("class", "text")
+        .text("Probability of Conversion");
+
+function getCookie (name) {
+  var value = '; ' + document.cookie
+  var parts = value.split('; ' + name + '=')
+  if (parts.length === 2) {
+    return parts
+      .pop()
+      .split(';')
+      .shift()
+  }
+}
+function generate_predictions() {
+
+    // Onclick event to generate predictions
+
+    button = document.getElementById('gen-pred');
+    button.disabled = true;
+    window.location.href = "/#container";
+    data ={
+        "age":Math.min(Math.max(parseInt(document.getElementById('pred-age').value), 17), 98),
+        "job":document.getElementById('pred-job').value,
+        "marital":document.getElementById('pred-marital').value,
+        "education":document.getElementById('pred-education').value,
+        "default":document.getElementById('pred-default').value,
+        "housing":document.getElementById('pred-housing').value,
+        "loan":document.getElementById('pred-loan').value,
+        "contact":document.getElementById('pred-contact').value,
+        "month":document.getElementById('pred-month').value,
+        "day_of_week":document.getElementById('pred-day_of_week').value,
+        "campaign":document.getElementById('pred-campaign').value,
+        "pdays":document.getElementById('pred-pdays').value,
+        "previous":document.getElementById('pred-previous').value,
+        "poutcome":document.getElementById('pred-poutcome').value,
+    };
+
+    var xhttp = new XMLHttpRequest()
+    xhttp.onreadystatechange = function () {
+        var json_response
+        if (this.readyState === 4 && this.status === 200) {
+            json_response = JSON.parse(this.response);
+            console.log(json_response);
+            update_pred(json_response);
+            button.disabled = false;
+            mean_probability = document.getElementById("mean-probabiity");
+            mean_probability.innerHTML = json_response[0]['value'].toFixed(2);
+        }
+    }
+    xhttp.open('POST', '/api/predict', true);
+    xhttp.setRequestHeader('Content-Type', 'application/json');
+    xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+    xhttp.send(
+        JSON.stringify(data)
+    );
+}
+
+function update_pred(data) {
+
+  // Updating bars for prediction
+
+  // Scale the range of the data in the domains
+  x.domain([0, Math.min(d3.max(data, function(d){ return d.value; })*1.25, 1)])
+  y.domain(data.map(function(d) { return d.name; }));
+
+  console.log(x)
+  console.log(y)
+
+  // append the rectangles for the bar chart
+  svg.selectAll(".bar")
+    .data(data)
+    .enter().append("rect")
+    .merge(svg.selectAll(".bar"))
+    .transition()
+    .duration(500)
+      .attr("class", "bar")
+      .attr("width", function(d) {return x(d.value); } )
+      .attr("y", function(d) { return y(d.name); })
+      .attr("height", y.bandwidth())
+  
+    var x_axis = d3.selectAll('.pred-x-axis')
+        .transition()
+        .duration(100)
+        .attr("class", "pred-x-axis")
+        .call(d3.axisBottom(x));
+}
+</script>
+</body>

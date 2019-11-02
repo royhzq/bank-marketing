@@ -166,8 +166,11 @@ CATEGORICAL_CHOICES = {
         for cat in CATEGORICAL
 }
 
-LOGISTIC_MODEL = joblib.load('MLModels/logistic_regression.joblib') 
+# ML Models
 SCALER = joblib.load('MLModels/scaler.joblib')
+LOGISTIC_MODEL = joblib.load('MLModels/logistic_regression.joblib') 
+RANDOM_FORESTS_MODEL = joblib.load('MLModels/random_forests.joblib') 
+XGB_MODEL = joblib.load('MLModels/xgb.joblib') 
 
 X_TRAIN_COLS = ['age', 'campaign', 'pdays', 'previous', 'emp_var_rate',
        'cons_price_idx', 'cons_conf_idx', 'euribor3m', 'nr_employed',
