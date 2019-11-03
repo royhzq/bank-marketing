@@ -139,6 +139,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 DATAFRAME = pd.read_csv('data/bank-additional-full.csv', delimiter=';')
 DATAFRAME['y_vals'] = DATAFRAME['y'].apply(lambda x: 1 if x=='yes' else 0)
+DATAFRAME.drop(columns='duration', inplace=True)
 DATAFRAME.columns = [ c.replace('.','_') for c in DATAFRAME.columns]
 
 CATEGORICAL = [
