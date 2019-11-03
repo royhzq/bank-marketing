@@ -4,7 +4,6 @@ from rest_framework import status
 from .serializers import *
 from django.conf import settings
 from .utils import predict, get_pair_values, get_category_success
-
 import json
 
 
@@ -31,7 +30,6 @@ class GetColValuesAPI(APIView):
             }
 
             return Response(response)
-
 
 class GetPairValuesAPI(APIView):
 

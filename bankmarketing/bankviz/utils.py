@@ -11,7 +11,6 @@ def convert_dummy(data):
     for cat in settings.CATEGORICAL:
         cat_val = data[cat] # Value from user
         for option in settings.CATEGORICAL_VALUES[cat]:
-            print("COMPARE :",cat_val, option)
             if cat_val  == option:
                 data[cat + '_' + option] = 1
             else:

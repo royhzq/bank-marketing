@@ -110,9 +110,9 @@
             This web app is a demo for a web-based dashboard visualizing Bank Marketing dataset. Built with D3.js and Django. This productionized application is deployed using Docker, Nginx on an AWS EC2 instance (t2.small).
         </p>
         <p>
-            
+            Includes an interactive predictive modelling segment where users are able to key in their customer inputs to generate the probability of the customer subscribing.
         </p>
-        <h2>View Histogram</h2>
+        <h2>Histograms</h2>
         <p>Click on the buttons below to view histograms of continuous variables</p>
         <ul>
             <li id="hist-li-age" class="button-cat" onclick="generate_histogram('age');">age</li>
@@ -140,13 +140,14 @@
         <h2>Scatterplot | 
             <strong><span id="pairs-y-h2">campaign</span></strong> <small>vs</small> <strong><span id="pairs-x-h2">age</span></strong>
         </h2>
+        <p>To change the scatterplot, click on any of the values / circles in the pairwise correlational chart above.</p>
     </div>
     <div id="pairs"></div>
     <br>
 
     <div id="catbar-title">
         <h2>Visualizing Categorical Variables</h2>
-        <p>Click on the buttons below to view the breakdown of subscriptions by categorical variables</p>
+        <p>Click on the buttons below to view the breakdown of subscriptions by categorical variables.</p>
         <ul>
             <li class="button-cat" onclick="get_category_success('job')">job</li>
             <li class="button-cat" onclick="get_category_success('marital')">marital</li>
@@ -163,6 +164,11 @@
     <div id="catbar"></div>
 
     <br>
+    <div id="predictions-title">
+        <h2>Predicting Time Deposit Subscriptions</h2>
+        <p>Instructions: Fill in your customer details in the form below and click the <i>Generate Prediction</i> button.</p>
+
+    </div>
     <div id="predictions"></div>
     <div id="mean-prob-conversion">
         <h2>Mean Probability of Subscribing: <span id="mean-probabiity">0.084</span></h>
@@ -975,7 +981,7 @@ var data = [
 ];
 
 // set the dimensions and margins of the graph
-var margin = {top: 50, right: 50, bottom: 60, left: 100},
+var margin = {top: 10, right: 50, bottom: 60, left: 100},
     width = 800     - margin.left - margin.right,
     height = 350 - margin.top - margin.bottom;
 
@@ -1032,15 +1038,6 @@ var svg = d3.select("#predictions").append("svg")
   svg.append("g")
       .call(d3.axisLeft(y));
 
-  // Add title
-  svg.append("text")
-        .attr("x", width/2)             
-        .attr("y", 0 - (margin.top / 2))
-        .attr("text-anchor", "middle")  
-        .style("font-size", "24px")
-        .style("font-weight", "bold")
-        .attr("class", "text")
-        .text("Predicting Time Deposit Subscription");
   // Add x-subtitle
   svg.append("text")
         .attr("x", width/2)             
@@ -1049,7 +1046,7 @@ var svg = d3.select("#predictions").append("svg")
         .style("font-size", "14px")
         .style("font-weight", "bold")
         .attr("class", "text")
-        .text("Probability of Conversion");
+        .text("Probability of Subscribing");
 
 function get_histogram() {
 
