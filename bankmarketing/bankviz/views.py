@@ -1,9 +1,8 @@
 from django.shortcuts import render
 from django.conf import settings
-from .utils import predict, get_pair_values
-
+from django.http import  HttpResponse, Http404
+from .utils import predict, get_pair_values, get_category_success
 import json
-# Create your views here.
 
 def data_viz(request):
 
@@ -32,10 +31,14 @@ def data_viz(request):
     # Initial pairs values - age / pdays
     pair_data = get_pair_values('age', 'campaign')
 
+    # Initial stacked bar chart data
+    stack_data = get_category_success('job')
+
     context = {
         'corr_data':json.dumps(corr_data),  
         'age_hist':json.dumps(age_hist),
-        'pair_data':json.dumps(pair_data)
+        'pair_data':json.dumps(pair_data),
+        'stack_data':json.dumps(stack_data)
     }
     return render(
         request,

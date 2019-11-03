@@ -56,6 +56,28 @@ def get_pair_values(xcol, ycol):
 
     return response
 
+def get_category_success(category):
+
+    # Given categorical variable
+    # Return dict for CategorySuccessAPI 
+    dfx = settings.DATAFRAME.groupby(category).apply(lambda x: pd.Series({
+        'success': x['y_vals'].sum(),
+        'failure': len(x['y_vals']) -x['y_vals'].sum()
+    })).reset_index()
+    response = {
+        "keys":list(dfx[category].values),
+        "values": [
+            {
+                "name":r[category],
+                "Did Not Subscribe":r['failure'],
+                "Subscribed":r['success']
+            } \
+            for i, r in dfx.iterrows() 
+        ]
+    }
+
+    return response
+
 def predict(data):
 
     # For external data , use mean of dataset as placeholder values for now
