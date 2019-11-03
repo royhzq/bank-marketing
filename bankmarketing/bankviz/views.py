@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.conf import settings
-from .utils import predict
+from .utils import predict, get_pair_values
 
 import json
 # Create your views here.
@@ -29,9 +29,13 @@ def data_viz(request):
         'values':[ {'value':int(val) } for val in age_vals ]
     }
 
+    # Initial pairs values - age / pdays
+    pair_data = get_pair_values('age', 'campaign')
+
     context = {
-        'corr_data':json.dumps(corr_data),
-        'age_hist':json.dumps(age_hist)
+        'corr_data':json.dumps(corr_data),  
+        'age_hist':json.dumps(age_hist),
+        'pair_data':json.dumps(pair_data)
     }
     return render(
         request,

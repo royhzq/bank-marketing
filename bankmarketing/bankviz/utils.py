@@ -21,6 +21,40 @@ def convert_dummy(data):
 
     return data
 
+def get_pair_values(xcol, ycol):
+
+    x_vals = settings.DATAFRAME[xcol].values
+    y_vals = settings.DATAFRAME[ycol].values
+    z_vals = settings.DATAFRAME['y_vals'].apply(lambda x: "Subscribed" if x==1 else "Did Not Subscribe").values
+
+    x_vals_max, x_vals_min = max(x_vals), min(x_vals)
+    y_vals_max, y_vals_min = max(y_vals), min(y_vals)
+    
+    # For D3 Axes
+    x_range_max = float(x_vals_max*1.05 if x_vals_max > 0 else x_vals_max*0.95)
+    y_range_max = float(y_vals_max*1.05 if y_vals_max > 0 else y_vals_max*0.95)
+    x_range_min = float(x_vals_min*1.05 if x_vals_min < 0 else x_vals_min*0.95)
+    y_range_min = float(y_vals_min*1.05 if y_vals_min < 0 else y_vals_min*0.95)
+
+    values = []
+    for row in zip(x_vals, y_vals, z_vals):
+        values.append({
+            "x":float(row[0]),
+            "y":float(row[1]),
+            "success":row[2]
+        })
+
+    response = {
+        "x_name":xcol,
+        "y_name":ycol,
+        "x_min":x_range_min,
+        "x_max":x_range_max,
+        "y_min":y_range_min,
+        "y_max":y_range_max,
+        "values": values
+    }
+
+    return response
 
 def predict(data):
 

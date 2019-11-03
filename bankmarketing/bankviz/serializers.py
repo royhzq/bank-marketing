@@ -3,6 +3,8 @@ from django.conf import settings
 
 class DataSerializer(serializers.Serializer):
 
+    # Serializer for prediction API fields
+
     age = serializers.IntegerField(min_value=17, max_value=98)
     job = serializers.ChoiceField(choices=settings.CATEGORICAL_CHOICES['job'])
     marital = serializers.ChoiceField(choices=settings.CATEGORICAL_CHOICES['marital'])
@@ -17,12 +19,21 @@ class DataSerializer(serializers.Serializer):
     pdays = serializers.IntegerField(min_value=0)
     previous = serializers.IntegerField(min_value=0)
     poutcome = serializers.ChoiceField(choices=settings.CATEGORICAL_CHOICES['poutcome'])
-    # emp_var_rate = serializers.CharField()
-    # cons_price_idx = serializers.CharField()
-    # cons_conf_idx = serializers.CharField()
-    # euribor3m = serializers.CharField()
-    # nr_employed = serializers.CharField()
+
 
 class GetColValuesSerializer(serializers.Serializer):
 
+    # Serializer to get dataframe column values by column name
+    # Used for Histograms
+
     colname = serializers.CharField()
+
+class GetPairValuesSerializer(serializers.Serializer):
+
+    # Serializer to get limited pairwise column values
+    # Used for scatter plot API
+
+    xcol = serializers.CharField()
+    ycol = serializers.CharField()
+
+    

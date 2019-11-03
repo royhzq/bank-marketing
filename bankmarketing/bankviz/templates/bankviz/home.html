@@ -105,6 +105,7 @@
 
     <div id="hist-input">
         <h2>View Histogram</h2>
+        <p>Click on the buttons below to view histograms of continuous variables</p>
         <ul>
             <li id="hist-li-age" class="button-hist-cat" onclick="generate_histogram('age');">age</li>
             <li id="hist-li-campaign" class="button-hist-cat" onclick="generate_histogram('campaign');">campaign</li>
@@ -120,7 +121,19 @@
     </div>
     <div id="hist"></div>
     <br>
+    <div id="correlation-title">
+        <h2>Pairwise Correlations</h2>
+        <p>Click the pairwise correlation values / circles in the visualization below to generate the scatter plot for the pair of variables</p>
+    </div>
+
     <div id="correlation"></div>
+
+    <div id="pairs-title">
+        <h2>Scatterplot | 
+            <strong><span id="pairs-y-h2">campaign</span></strong> <small>vs</small> <strong><span id="pairs-x-h2">age</span></strong>
+        </h2>
+    </div>
+    <div id="pairs"></div>
     <br>
     <div id="age-hist"></div>
 
@@ -276,7 +289,18 @@
 
 <script src="//d3js.org/d3.v4.min.js"></script>
 
-
+<script>
+function getCookie (name) {
+  var value = '; ' + document.cookie
+  var parts = value.split('; ' + name + '=')
+  if (parts.length === 2) {
+    return parts
+      .pop()
+      .split(';')
+      .shift()
+  }
+}
+</script>
 
 
 <script>
@@ -440,18 +464,17 @@ function update_hist(data) {
 
 
 <script>
-    var margin_corr = {top: 50, right: 40, bottom: 20, left: 20},
+    // Correlogram
+    var margin_corr = {top: 20, right: 40, bottom: 20, left: 20},
         width_corr = 900 - margin_corr.left - margin_corr.right,
         height_corr = 500 - margin_corr.top - margin_corr.bottom
 
-    // Create the svg area
     var svg_corr = d3.select("#correlation")
       .append("svg")
         .attr("width", width_corr + margin_corr.left + margin_corr.right)
         .attr("height", height_corr + margin_corr.top + margin_corr.bottom)
       .append("g")
         .attr("transform", "translate(" + margin_corr.left + "," + margin_corr.top + ")");
-
 
     data = JSON.parse('{{ corr_data | safe }}')
 
@@ -484,9 +507,14 @@ function update_hist(data) {
         .enter()
         .append("g")
           .attr("class", "cor")
+          .attr("style", "cursor:pointer")
           .attr("transform", function(d) {
             return "translate(" + x_corr(d.x) + "," + y_corr(d.y) + ")";
-          });
+          })
+        .on("click", function(d) {
+                get_pairs(xcol=d.x, ycol=d.y);
+            }
+        )
 
       cor.filter(function(d){
           var ypos = domain_corr.indexOf(d.y);
@@ -538,15 +566,194 @@ function update_hist(data) {
                     .duration(0)      
                     .style("opacity", 0.9);   
             })
-// Add title
-  svg_corr.append("text")
-        .attr("x", width_corr/2)             
-        .attr("y", 0 - (margin_corr.top / 2))
-        .attr("text-anchor", "middle")  
-        .style("font-size", "24px")
-        .style("font-weight", "bold")
-        .attr("class", "text")
-        .text("Correlogram of Continuous Variables");
+
+</script>
+
+<script>
+    // Pairwise Correlations
+
+    var margin_pair = {top: 20, right: 50, bottom: 100, left: 80 },
+    width_pair = 800 - margin_pair.left - margin_pair.right,
+    height_pair = 500 - margin_pair.top - margin_pair.bottom;
+
+    var color_pair = d3.scaleOrdinal(d3.schemeCategory10);
+
+    var svg_pair = d3.select("#pairs").append("svg")
+        .attr("width", width_pair + margin_pair.left + margin_pair.right)
+        .attr("height", height_pair + margin_pair.top + margin_pair.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin_pair.left + "," + margin_pair.top + ")");
+
+    var data_pair = JSON.parse('{{ pair_data | safe }}')
+
+    var data_pair_2 = {
+        "x_name":"x-va",
+        "y_name":"y-va",
+        "x_min":0,
+        "x_max":35,
+        "y_min":0,
+        "y_max":22,
+        "values": [
+            { "x":5, "y":3, "success":"subscribed" },
+            { "x":3, "y":4, "success":"subscribed" },
+            { "x":1, "y":13, "success":"subscribed" },
+            { "x":21, "y":19, "success":"fail" },
+            { "x":33, "y":8, "success":"fail" },
+        ]
+    }
+
+    var x_pair = d3.scaleLinear()
+        .range([ 0, width_pair]);
+
+    var y_pair = d3.scaleLinear()
+        .range([height_pair, 0]);
+
+    var xAxis_pair = d3.axisBottom(x_pair);
+    var yAxis_pair = d3.axisLeft(y_pair);
+
+    x_pair.domain([data_pair.x_min, data_pair.x_max]);
+    y_pair.domain([data_pair.y_min, data_pair.y_max]);
+
+    svg_pair.append("g")
+      .attr("class", "x-axis-pairs")
+      .attr("transform", "translate(0," + height_pair + ")")
+      .call(xAxis_pair)
+
+    svg_pair.append("g")
+      .attr("class", "y-axis-pairs")
+      .call(yAxis_pair)
+
+
+    svg_pair.append("text")
+      .attr("id", "x-axis-pairs-label")             
+      .attr("transform",
+            "translate(" + (width_pair/2) + " ," + 
+                           (height_pair + margin_pair.bottom/2) + ")")
+      .style("text-anchor", "middle")
+      .text(data_pair.x_name);
+
+    svg_pair.append("text")
+      .attr("id", "y-axis-pairs-label")             
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - 3*margin_pair.left/4)
+      .attr("x",0 - (height_pair / 2))
+      .attr("dy", "1em")
+      .style("text-anchor", "middle")
+      .text(data_pair.y_name);   
+
+    svg_pair.selectAll(".dot-pairs")
+      .data(data_pair.values)
+    .enter().append("circle")
+      .attr("class", "dot-pairs")
+      .attr("r", 5)
+      .attr("cx", function(d) { return x_pair(d.x); })
+      .attr("cy", function(d) { return y_pair(d.y); })
+      .style("fill", function(d) { return color_pair(d.success); })
+      .style("opacity", 0.5);
+
+    var legend_pair = svg_pair.selectAll(".legend-pairs")
+      .data(color_pair.domain())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+    legend_pair.append("rect")
+      .attr("x", width_pair - 48)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color_pair);
+
+    legend_pair.append("text")
+      .attr("x", width_pair - 60)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d; });
+
+
+    function get_pairs(xcol,ycol) {
+
+       data = {
+            "xcol":xcol,
+            "ycol":ycol
+       }
+
+        // Loading message
+        svg_pair.append("text")
+          .attr("id", "pair-loading")             
+          .attr("y", height_pair/2)
+          .attr("x", width_pair/2)
+          .style("text-anchor", "middle")
+          .style("color", "#eaeaea")
+          .style("font-size", "32px")
+          .text("Loading...");  
+
+        window.location.href = "/#pairs-title";
+
+        var xhttp = new XMLHttpRequest()
+        xhttp.onreadystatechange = function () {
+            var json_response
+            if (this.readyState === 4 && this.status === 200) {
+                json_response = JSON.parse(this.response);
+                update_pairs(json_response);
+                // Remove loading
+                document.getElementById("pair-loading").remove();
+            }
+        }
+        xhttp.open('POST', '/api/get_pair_values', true);
+        xhttp.setRequestHeader('Content-Type', 'application/json');
+        xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+        xhttp.send(
+            JSON.stringify(data)
+        );
+    }
+
+
+    function update_pairs(data_pair) {
+
+
+        x_pair.domain([data_pair.x_min, data_pair.x_max]);
+        y_pair.domain([data_pair.y_min, data_pair.y_max]);
+
+        var xAxis_pair = d3.axisBottom(x_pair);
+        var yAxis_pair = d3.axisLeft(y_pair);
+
+        x_pair.domain([data_pair.x_min, data_pair.x_max]);
+        y_pair.domain([data_pair.y_min, data_pair.y_max]);
+
+        svg_pair.selectAll(".x-axis-pairs")
+          .attr("class", "x-axis-pairs")
+          .attr("transform", "translate(0," + height_pair + ")")
+          .call(xAxis_pair)
+
+        svg_pair.selectAll(".y-axis-pairs")
+          .attr("class", "y-axis-pairs")
+          .call(yAxis_pair)
+
+
+        var circles = svg_pair
+            .selectAll(".dot-pairs")
+            .data(data_pair.values)
+
+        circles.exit().remove()
+        circles.enter().append("circle")
+            .attr("class", "dot-pairs")
+        .merge(circles)
+        .transition()
+          .attr("class", "dot-pairs")
+          .attr("r", 5)
+          .attr("cx", function(d) { return x_pair(d.x); })
+          .attr("cy", function(d) { return y_pair(d.y); })
+          .style("fill", function(d) { return color_pair(d.success); })
+          .style("opacity", 0.5);
+
+        document.getElementById("y-axis-pairs-label").innerHTML = data_pair.y_name;
+        document.getElementById("x-axis-pairs-label").innerHTML = data_pair.x_name;
+
+        document.getElementById("pairs-y-h2").innerHTML = data_pair.y_name;
+        document.getElementById("pairs-x-h2").innerHTML = data_pair.x_name;
+
+    }
 
 </script>
 
@@ -755,17 +962,6 @@ var svg = d3.select("#predictions").append("svg")
         .style("font-weight", "bold")
         .attr("class", "text")
         .text("Probability of Conversion");
-
-function getCookie (name) {
-  var value = '; ' + document.cookie
-  var parts = value.split('; ' + name + '=')
-  if (parts.length === 2) {
-    return parts
-      .pop()
-      .split(';')
-      .shift()
-  }
-}
 
 function get_histogram() {
 

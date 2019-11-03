@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import *
 from django.conf import settings
-from .utils import predict
+from .utils import predict, get_pair_values
 
 import json
 
@@ -29,6 +29,27 @@ class GetColValuesAPI(APIView):
                 'min': col_vals.min(),
                 'values':[ {'value':val } for val in col_vals ]
             }
+
+            return Response(response)
+
+
+class GetPairValuesAPI(APIView):
+
+    '''
+    Example
+{
+"xcol":"emp_var_rate",
+"ycol":"cons_conf_idx"
+}
+    '''
+
+    def post(self, request, format=None):
+        serializer = GetPairValuesSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+
+            xcol = serializer.data.get('xcol')
+            ycol = serializer.data.get('ycol')
+            response = get_pair_values(xcol, ycol)
 
             return Response(response)
 
